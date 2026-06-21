@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一杯气泡水</title>
+  <style>
+    :root {
+      --bg: #f9f6f0;
+      --paper: rgba(255, 252, 247, 0.84);
+      --paper-strong: rgba(255, 252, 247, 0.96);
+      --line: rgba(86, 82, 78, 0.18);
+      --text: #2d2926;
+      --muted: #6f6963;
+      --shadow: 0 30px 90px rgba(80, 67, 58, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.9), transparent 24%),
+        radial-gradient(circle at 88% 18%, rgba(219, 228, 233, 0.4), transparent 24%),
+        linear-gradient(180deg, #fbf8f3 0%, var(--bg) 100%);
+      letter-spacing: 0.02em;
+    }
+
+    button, input { font: inherit; }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+    }
+
+    .profile-section {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 40px;
+      align-items: center;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .profile-photo {
+      width: 300px;
+      height: 400px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+    }
+
+    .profile-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .questions-section {
+      padding: 80px 0;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 500;
+      margin-bottom: 40px;
+      color: var(--text);
+    }
+
+    .card, .scene, .quote-bar {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .card {
+      position: sticky;
+      top: 20px;
+      padding: 22px 20px 18px;
+      border-radius: 24px;
+      min-height: 220px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(86, 82, 78, 0.12);
+    }
+
+    .card-title { margin: 0; font-size: 1rem; font-weight: 600; }
+
+    .card-note {
+      font-size: 0.76rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .profile-list { display: grid; gap: 12px; }
+
+    .profile-item {
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 10px;
+      align-items: start;
+      font-size: 0.96rem;
+      line-height: 1.75;
+    }
+
+    .profile-key { color: var(--muted); }
+    .profile-value { color: var(--text); }
+
+    .scene {
+      position: relative;
+      border-radius: 28px;
+      padding: 18px 18px 56px;
+      overflow: hidden;
+      min-height: 760px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(247, 242, 235, 0.92)),
+        var(--paper);
+    }
+
+    .cup-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) 280px;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .cup-stage {
+      position: relative;
+      min-height: 620px;
+      border-radius: 24px;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(247, 244, 238, 0.12));
+    }
+
+    .cup-shell {
+      position: relative;
+      width: min(100%, 560px);
+      height: 100%;
+      min-height: 580px;
+      margin: 0 auto;
+    }
+
+    #bubbleCanvas, .label-layer, .status-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #bubbleCanvas {
+      pointer-events: auto;
+      cursor: default;
+    }
+
+    .label-layer, .status-layer { pointer-events: none; }
+
+    .cluster-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.38);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: #4c4946;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 24px rgba(88, 78, 69, 0.08);
+      white-space: nowrap;
+    }
+
+    .empty-note {
+      position: absolute;
+      left: 50%;
+      bottom: 12%;
+      transform: translateX(-50%);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(86, 82, 78, 0.1);
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+
+    .empty-note.show { opacity: 1; }
+
+    .answer-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 580px;
+    }
+
+    .answer-box, .meta-box {
+      border-radius: 20px;
+      border: 1px solid rgba(86, 82, 78, 0.12);
+      background: var(--paper-strong);
+      padding: 16px 16px 18px;
+    }
+
+    .panel-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .question-title {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      line-height: 1.7;
+      font-weight: 600;
+    }
+
+    .answer-text {
+      margin: 0;
+      min-height: 180px;
+      color: var(--text);
+      line-height: 2;
+      font-size: 0.95rem;
+    }
+
+    .answer-text.is-placeholder { color: var(--muted); }
+
+    .group-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .group-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      color: #45413d;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(86, 82, 78, 0.08);
+    }
+
+    .scene-foot {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .foot-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tiny-btn {
+      border: 1px solid rgba(86, 82, 78, 0.16);
+      background: rgba(255, 255, 255, 0.6);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    .tiny-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .foot-state { color: var(--muted); font-size: 0.8rem; }
+
+    .quote-bar {
+      margin-top: 16px;
+      border-radius: 20px;
+      padding: 14px 18px;
+      text-align: center;
+      color: #47423d;
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      line-height: 1.9;
+      min-height: 58px;
+    }
+
+    .quote-bar.is-placeholder { color: var(--muted); }
+
+    @media (max-width: 960px) {
+      .hero, .cup-layout { grid-template-columns: 1fr; }
+      .card { position: relative; top: auto; }
+      .scene { min-height: auto; }
+      .cup-stage, .answer-panel { min-height: auto; }
+      .cup-shell { min-height: 500px; }
+      .scene-foot { position: static; margin-top: 16px; }
+    }
+
+    @media (max-width: 640px) {
+      .page { width: min(100vw - 20px, 1180px); padding-top: 10px; }
+      .scene, .card { border-radius: 22px; }
+      .cup-shell { min-height: 430px; }
+      .profile-item { grid-template-columns: 52px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- 个人信息部分 -->
+    <section class="hero">
+      <div class="profile-section">
+        <div class="profile-photo">
+          <img src="profile-photo.jpg" alt="个人照片" onerror="this.src='https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=portrait%20photo%20of%20a%20young%20person%2C%20natural%20lighting%2C%20soft%20features%2C%20clean%20background&image_size=portrait_4_3'">
+        </div>
+        <aside class="card">
+          <div class="card-head">
+            <div>
+              <p class="card-title">旧档案卡</p>
+              <div class="card-note">Profile</div>
+            </div>
+          </div>
+          <div id="profileList" class="profile-list"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 问答气泡部分 -->
+    <section class="questions-section">
+      <h2 class="section-title">一杯气泡水</h2>
+      <main class="scene">
+        <div class="cup-layout">
+          <section class="cup-stage">
+            <div class="cup-shell" id="cupShell">
+              <canvas id="bubbleCanvas"></canvas>
+              <div id="labelLayer" class="label-layer"></div>
+              <div class="status-layer">
+                <div id="emptyNote" class="empty-note">泡泡都破了。重置吧。</div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="answer-panel">
+            <div class="answer-box">
+              <p class="panel-label">Ink</p>
+              <h2 id="answerQuestion" class="question-title">还没有被戳破的泡泡。</h2>
+              <p id="answerText" class="answer-text is-placeholder">点击一个气泡，答案会像一滴墨一样停在这里。</p>
+            </div>
+            <div class="meta-box">
+              <p class="panel-label">Groups</p>
+              <div id="groupChipList" class="group-chip-list"></div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="scene-foot">
+          <div class="foot-actions">
+            <button id="resetBtn" class="tiny-btn" type="button">重置</button>
+            <button id="randomBtn" class="tiny-btn" type="button">随机</button>
+          </div>
+          <div id="footState" class="foot-state">还剩 0 / 0 个泡泡</div>
+        </div>
+      </main>
+    </section>
+
+    <footer id="quoteBar" class="quote-bar">"先做，后看。"</footer>
+  </div>
+
+  <script>
+    // 颜色板
+    const palette = ["#cfded7", "#d9d2c4", "#d6dfe5", "#ddd2da", "#d9e2cc", "#e4d7c8", "#d2d8e8", "#d9d6cf"];
+    
+    // 分组 emoji 映射
+    const emojiRules = [
+      { keyword: "过去", emoji: "📅" },
+      { keyword: "思考", emoji: "💭" },
+      { keyword: "美", emoji: "🎨" },
+      { keyword: "身体", emoji: "🫧" },
+      { keyword: "关系", emoji: "❤️" },
+      { keyword: "未来", emoji: "🌊" },
+      { keyword: "现在", emoji: "🌿" },
+      { keyword: "关于我", emoji: "✨" },
+      { keyword: "我", emoji: "✨" }
+    ];
+
+    // 分组锚点位置（百分比）
+    const clusterAnchors = [
+      { x: 20, y: 20 },
+      { x: 80, y: 20 },
+      { x: 50, y: 50 },
+      { x: 20, y: 80 },
+      { x: 80, y: 80 },
+      { x: 35, y: 50 },
+      { x: 65, y: 50 },
+      { x: 50, y: 35 }
+    ];
+
+    // 状态管理
+    const state = {
+      profileEntries: [],
+      profileMap: new Map(),
+      questions: [],
+      groups: [],
+      bubbles: [],
+      answer: null,
+      hoverId: null,
+      ready: false,
+      cupRect: null,
+      timeStart: 0,
+      isHovering: false
+    };
+
+    // DOM 元素
+    let profileList, groupChipList, labelLayer, footState, answerQuestion, answerText, quoteBar, emptyNote, cupShell, canvas, ctx;
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      // 获取 DOM 元素
+      profileList = document.getElementById("profileList");
+      groupChipList = document.getElementById("groupChipList");
+      labelLayer = document.getElementById("labelLayer");
+      footState = document.getElementById("footState");
+      answerQuestion = document.getElementById("answerQuestion");
+      answerText = document.getElementById("answerText");
+      quoteBar = document.getElementById("quoteBar");
+      emptyNote = document.getElementById("emptyNote");
+      cupShell = document.getElementById("cupShell");
+      canvas = document.getElementById("bubbleCanvas");
+      ctx = canvas.getContext("2d");
+
+      // 绑定事件
+      document.getElementById("resetBtn").addEventListener("click", resetBubbles);
+      document.getElementById("randomBtn").addEventListener("click", popRandomBubble);
+      window.addEventListener("resize", handleResize);
+      
+      // 鼠标悬停时暂停动画
+      canvas.addEventListener("mouseenter", () => {
+        state.isHovering = true;
+      });
+      canvas.addEventListener("mouseleave", () => {
+        state.isHovering = false;
+        state.hoverId = null;
+        canvas.style.cursor = "default";
+      });
+      canvas.addEventListener("mousemove", handlePointerMove);
+      canvas.addEventListener("click", handleCanvasClick);
+
+      // 初始化时间
+      state.timeStart = performance.now();
+
+      // 获取数据并启动动画
+      fetchExcelData();
+      drawLoop();
+    });
+
+    // 嵌入的 Excel 数据（由 build.py 自动生成）
+    const EMBEDDED_DATA = {
+  "profileEntries": [
+    {
+      "key": "姓名",
+      "value": "陈国苗"
+    },
+    {
+      "key": "年龄",
+      "value": "18岁"
+    },
+    {
+      "key": "坐标",
+      "value": "深圳 → 上海"
+    },
+    {
+      "key": "目前",
+      "value": "上海交通大学，日语专业（高起点）"
+    },
+    {
+      "key": "喜欢",
+      "value": "越野跑、排球"
+    },
+    {
+      "key": "照片",
+      "value": "file:///C:/Users/17728/Documents/WeChat Files/wxid_15og7t6ykjq622/FileStorage/Temp/279c34a6d65ef91a80cc4947d9161b8.jpg"
+    }
+  ],
+  "questions": [
+    {
+      "id": "1",
+      "group": "关于我",
+      "question": "你怎么描述自己的性格？",
+      "answer": "聪慧机敏，但思虑过多，压力重重，易有情绪波动。（是对的）",
+      "order": 1
+    },
+    {
+      "id": "2",
+      "group": "关于我",
+      "question": "你觉得自己窝囊吗？",
+      "answer": "我觉得我挺窝囊的，而且总是喜欢对各种观点或者事情持保留意见，因为我觉得我自己想不明白。",
+      "order": 2
+    },
+    {
+      "id": "3",
+      "group": "关于我",
+      "question": "你是一个什么样的人？",
+      "answer": "一个非常愿意在他人停止思考的地方多思考五分钟的人。",
+      "order": 3
+    },
+    {
+      "id": "4",
+      "group": "关于我",
+      "question": "你对自己的外貌怎么看？",
+      "answer": "我长得实在难以恭维，身材也总在发胖臃肿和瘦得还行之间来回横跳。",
+      "order": 4
+    },
+    {
+      "id": "5",
+      "group": "我的过去",
+      "question": "2016年（9岁）有什么大事吗？",
+      "answer": "其实没什么大事，我的小学期间都没什么特别大的事。不过也可能是我忘记了。",
+      "order": 1
+    },
+    {
+      "id": "6",
+      "group": "我的过去",
+      "question": "2018年（11岁）呢？",
+      "answer": "差不多吧，小升初时期，有在努力学习，考各种自主招生考试，成绩都不错。",
+      "order": 2
+    },
+    {
+      "id": "7",
+      "group": "我的过去",
+      "question": "2020年（13岁）呢？",
+      "answer": "确实刚升入初中，不过这一年遇上了疫情，我开始变胖，运动能力也下降。因此开始有意识地运动。",
+      "order": 3
+    },
+    {
+      "id": "8",
+      "group": "我的过去",
+      "question": "2022年（15岁）呢？",
+      "answer": "升入高中，学业压力很大。",
+      "order": 4
+    },
+    {
+      "id": "9",
+      "group": "我的过去",
+      "question": "2023-2024年（16-17岁）呢？",
+      "answer": "23年是万恶之源，经历重要选择……关于选科选书院的痛苦贯穿了我接下来的整个高中。学习状态也起起伏伏，高一下还可以吃老本，高二上是最糟糕的，高二下开始才逐渐幸福（表面上的）。24年没有什么家中钱财或者女性身体健康的事情扰到我的学业。惊扰我的学业的是其他的事。",
+      "order": 5
+    },
+    {
+      "id": "10",
+      "group": "我的过去",
+      "question": "2025年（18岁）呢？",
+      "answer": "我没有高考，是外语保送上的大学（我不喜欢的这条路）。不过这一年过得很魔幻。",
+      "order": 6
+    },
+    {
+      "id": "11",
+      "group": "关于思考",
+      "question": "你总是说“持保留意见”，是因为真的没想明白，还是因为害怕？",
+      "answer": "真的没想明白。因为我是一个“非常愿意”“在他人停止思考的地方多思考五分钟”的人。我深知人要对自己诚实。有很多东西讲不明白，就是因为人还不够真诚，不够诚实。有一些话不愿意说。",
+      "order": 1
+    },
+    {
+      "id": "12",
+      "group": "关于思考",
+      "question": "多思考五分钟带给你什么？",
+      "answer": "就是感觉拥有了一双不一样的眼睛，看到的世界和别人不一样吧。",
+      "order": 2
+    },
+    {
+      "id": "13",
+      "group": "关于思考",
+      "question": "那种“看得更清楚”的充盈感和“无法与人共享”的孤独感，哪个更常浮现？",
+      "answer": "前者吧。后者的话，我感觉我周围一些高质量的朋友，虽然数量很少，还是能接的起来我的这些话的。（我有的时候想着如果伴侣能够做到完全能接住这些话就好了）",
+      "order": 3
+    },
+    {
+      "id": "14",
+      "group": "关于美与身体",
+      "question": "如果抛开“身材焦虑”这个滤镜，你回想一下，上一次你在跳舞或跑步时，感受到过“美”吗？那时候的“美”，是关于你自己的，还是关于那个动作本身的？",
+      "answer": "如果我不看镜子的话，我会觉得是关于动作本身的。我作为动作的发出者，能够感受他的发力的美感。但是一旦我看向镜子，看到了我自己，那种美感就会瞬间被打破了。",
+      "order": 1
+    },
+    {
+      "id": "15",
+      "group": "关于美与身体",
+      "question": "那个观察你的“第三者”长什么样？",
+      "answer": "表情估计是有点作呕，有点不愿面对，不愿接受闭上眼的痛苦表情吧。感觉就像看到很低俗审美的作品一样，不愿再多看一眼。然而，因为这次被审美的课题又是我自己，所以同时可能也会有自卑和局促之感。",
+      "order": 2
+    },
+    {
+      "id": "16",
+      "group": "关于关系",
+      "question": "你谈过恋爱吗？",
+      "answer": "没有。有过极致的暧昧，但没有“确定关系的陋习”。",
+      "order": 1
+    },
+    {
+      "id": "17",
+      "group": "关于关系",
+      "question": "“没有确定关系的陋习”——这句话保护了你，但也可能让你错过了什么。如果完全不考虑对方的想法，你内心深处，真的不想体验一次“确定的亲密”吗？",
+      "answer": "我目前确实是感受到非常强烈的抵触。其实我觉得这跟我本人的完美主义的美学倾向有关。我是一个艺术细胞还算发达的人，我会拼命让我的绘画作品或者舞蹈作品能够展现出我所意识到的“美”——不如直接说我是一个时时刻刻追求我所认为的“美”的人。所以当我和他人相处，尤其是相处于亲密关系——这种并非从小就浸泡其中而不会有凝视感，而是一种全新的有陌生感的关系——的时候，我很多时候其实是跳脱出来用第三者的目光观察我的，观察这个场面是否符合我的审美的。然而因为我长的实在难以恭维，身材也总是在发胖臃肿和瘦得还行之间来回横跳，所以我想我抵触亲密关系，是因为我认为我没有办法塑造一个符合我的审美的亲密的场景。我不能接受自己深度沉浸在一个不符合自己审美的情境里。",
+      "order": 2
+    },
+    {
+      "id": "18",
+      "group": "关于关系",
+      "question": "18岁那年发生了什么？",
+      "answer": "只有18岁，跟一个人暧昧到了极点，但是大学上学后异地后立马又淡了。“没有那种确定关系的陋习”",
+      "order": 3
+    },
+    {
+      "id": "19",
+      "group": "关于关系",
+      "question": "你现在有可以安心待着的人吗？",
+      "answer": "有的。有从初中就开始认识的女性朋友，也有高中才认识的男性朋友。",
+      "order": 4
+    },
+    {
+      "id": "20",
+      "group": "关于关系",
+      "question": "如果有人能完全接住你的话，你愿意被看见吗？",
+      "answer": "我感觉我可能还是没法迈过镜子这道坎。我会倾向于跟他成为很好的朋友伙伴，但是进入亲密关系还是很难。",
+      "order": 5
+    },
+    {
+      "id": "21",
+      "group": "关于现在与未来",
+      "question": "如果你知道自己绝对不会失败，你会做什么？",
+      "answer": "绝对不会失败吗？那或许是坚持锻炼，进军越野跑。",
+      "order": 1
+    },
+    {
+      "id": "22",
+      "group": "关于现在与未来",
+      "question": "你的大学和专业是什么？",
+      "answer": "我在上海交通大学，选的是日语专业（其实我没得选，因为我是日语高起点学生。）",
+      "order": 2
+    },
+    {
+      "id": "23",
+      "group": "关于现在与未来",
+      "question": "你对未来的职业有什么想法？",
+      "answer": "我很难说，毕竟不知道后面要不要跨专业呢。你列出来的这些我都不太感兴趣，其实。",
+      "order": 3
+    }
+  ]
+};
+
+    // 直接使用嵌入的数据
+    function fetchExcelData() {
+      console.log('Using embedded data, questions:', EMBEDDED_DATA.questions.length);
+      hydrateState(EMBEDDED_DATA);
+    }
+
+    // 处理数据
+    function hydrateState({ profileEntries, questions }) {
+      console.log('=== Hydrating state ===');
+      console.log('Profile entries:', profileEntries.length);
+      console.log('Questions:', questions.length);
+      
+      state.profileEntries = profileEntries;
+      state.profileMap = new Map(profileEntries.map((item) => [item.key, item.value]));
+      state.questions = questions.sort((a, b) => {
+        if (a.group !== b.group) return a.group.localeCompare(b.group, "zh-CN");
+        return a.order - b.order;
+      });
+      
+      console.log('Sorted questions:');
+      state.questions.forEach(q => console.log(`  [${q.group}] ${q.question}`));
+      
+      state.answer = null;
+      state.groups = buildGroups(state.questions);
+      renderProfile();
+      renderGroupChips();
+      renderLabels();
+      updateQuote();
+      buildBubbles();
+      updateAnswerPanel();
+      updateFootState();
+      state.ready = true;
+      handleResize();
+    }
+
+    // 使用默认数据（备用）
+    function useDefaultData() {
+      const defaultProfileEntries = [
+        { key: "姓名", value: "陈国苗" },
+        { key: "年龄", value: "18岁" },
+        { key: "坐标", value: "深圳 → 上海" },
+        { key: "目前", value: "上海交通大学，日语专业（高起点）" },
+        { key: "喜欢", value: "越野跑、排球" },
+        { key: "一句话", value: "先做，后看。" }
+      ];
+
+      const defaultQuestions = [
+        { id: "1", group: "关于我", question: "你是一个什么样的人？", answer: "我是一个热爱生活、积极向上的人，喜欢挑战自我，不断学习新事物。", order: 1 },
+        { id: "2", group: "关于我", question: "你的性格特点是什么？", answer: "我的性格开朗乐观，善于与人沟通，做事认真负责。", order: 2 },
+        { id: "3", group: "我的过去", question: "你的成长经历是怎样的？", answer: "我在深圳长大，后来来到上海读书，这段经历让我开阔了眼界。", order: 1 },
+        { id: "4", group: "我的过去", question: "你有什么难忘的回忆？", answer: "高中时期参加排球比赛的经历让我难忘，教会了我团队合作的重要性。", order: 2 },
+        { id: "5", group: "关于思考", question: "你如何看待人生？", answer: "人生是一场旅程，重要的是过程而不是结果，要珍惜每一个当下。", order: 1 },
+        { id: "6", group: "关于思考", question: "你有什么人生信条？", answer: "先做，后看。行动比思考更重要，只有实践才能带来真正的成长。", order: 2 },
+        { id: "7", group: "关于美与身体", question: "你如何定义美？", answer: "美是多元的，内在的自信和善良比外在的美丽更重要。", order: 1 },
+        { id: "8", group: "关于美与身体", question: "你如何保持健康？", answer: "我喜欢运动，特别是越野跑和排球，这些运动让我保持身体和心理的健康。", order: 2 },
+        { id: "9", group: "关于关系", question: "你如何看待人际关系？", answer: "人际关系是相互的，需要真诚和包容，要学会倾听和理解他人。", order: 1 },
+        { id: "10", group: "关于关系", question: "你最重视什么关系？", answer: "我最重视家庭和朋友之间的关系，这些是我生活中最珍贵的财富。", order: 2 },
+        { id: "11", group: "关于现在与未来", question: "你现在的目标是什么？", answer: "我现在的目标是好好学习日语，争取在专业上取得好成绩。", order: 1 },
+        { id: "12", group: "关于现在与未来", question: "你对未来有什么规划？", answer: "未来我希望能够运用所学的知识，为社会做出贡献，同时也能实现自己的人生价值。", order: 2 }
+      ];
+
+      hydrateState({ questions: defaultQuestions, profileEntries: defaultProfileEntries });
+    }
+
+    // 构建分组
+    function buildGroups(questions) {
+      const uniqueGroups = Array.from(new Set(questions.map((item) => item.group)));
+      return uniqueGroups.map((groupName, index) => {
+        const anchor = clusterAnchors[index % clusterAnchors.length];
+        const emoji = inferEmoji(groupName, index);
+        return {
+          name: groupName,
+          label: `${emoji} ${groupName}`,
+          color: palette[index % palette.length],
+          positionX: anchor.x,
+          positionY: anchor.y
+        };
+      });
+    }
+
+    // 推断 emoji
+    function inferEmoji(groupName, index) {
+      const matched = emojiRules.find((rule) => groupName.includes(rule.keyword));
+      if (matched) return matched.emoji;
+      const fallback = ["🫧", "🌫️", "🍃", "🪞", "🕊️", "🌙"];
+      return fallback[index % fallback.length];
+    }
+
+    // 构建气泡 - 改进布局避免重叠
+    function buildBubbles() {
+      const grouped = new Map();
+      state.groups.forEach((group) => grouped.set(group.name, []));
+      state.questions.forEach((item) => grouped.get(item.group).push(item));
+      state.bubbles = [];
+
+      state.groups.forEach((group) => {
+        const items = grouped.get(group.name) || [];
+        const count = items.length;
+        
+        // 根据问题数量调整布局半径
+        const baseRadius = 60 + count * 15;
+
+        items.forEach((item, index) => {
+          // 使用螺旋布局避免重叠
+          const angle = (Math.PI * 2 * index) / Math.max(count, 1) + (index * 0.5);
+          const layerRadius = baseRadius * (0.3 + 0.15 * Math.floor(index / 4));
+          const bubbleRadius = clamp(28 + item.question.length * 0.15, 30, 50);
+
+          state.bubbles.push({
+            ...item,
+            groupLabel: group.label,
+            color: group.color,
+            anchorX: group.positionX,
+            anchorY: group.positionY,
+            driftSeed: hashString(item.question + item.answer),
+            baseOffsetX: Math.cos(angle) * layerRadius,
+            baseOffsetY: Math.sin(angle) * layerRadius * 0.7,
+            radius: bubbleRadius,
+            popped: false,
+            popStart: 0
+          });
+        });
+      });
+    }
+
+    // 渲染个人信息
+    function renderProfile() {
+      profileList.innerHTML = "";
+      state.profileEntries.forEach((entry) => {
+        if (entry.key === "一句话" || entry.key === "照片") return;
+        const row = document.createElement("div");
+        row.className = "profile-item";
+        row.innerHTML = `<div class="profile-key">${escapeHtml(entry.key)}</div><div class="profile-value">${escapeHtml(entry.value)}</div>`;
+        profileList.appendChild(row);
+      });
+    }
+
+    // 渲染分组标签
+    function renderGroupChips() {
+      groupChipList.innerHTML = "";
+      state.groups.forEach((group) => {
+        const chip = document.createElement("div");
+        chip.className = "group-chip";
+        chip.style.background = `${group.color}88`;
+        chip.textContent = group.label;
+        groupChipList.appendChild(chip);
+      });
+    }
+
+    // 渲染分组位置标签
+    function renderLabels() {
+      labelLayer.innerHTML = "";
+      state.groups.forEach((group) => {
+        const label = document.createElement("div");
+        label.className = "cluster-label";
+        label.textContent = group.label;
+        label.style.left = `${group.positionX}%`;
+        label.style.top = `${Math.max(8, group.positionY - 12)}%`;
+        label.style.background = hexToRgba(group.color, 0.24);
+        labelLayer.appendChild(label);
+      });
+    }
+
+    // 更新一句话
+    function updateQuote() {
+      const quote = state.profileMap.get("一句话") || "先做，后看。";
+      quoteBar.textContent = `"${quote.replace(/^[""]|[""]$/g, "")}"`;
+      quoteBar.classList.remove("is-placeholder");
+    }
+
+    // 更新答案面板
+    function updateAnswerPanel() {
+      if (!state.answer) {
+        answerQuestion.textContent = "还没有被戳破的泡泡。";
+        answerText.textContent = "点击一个气泡，答案会像一滴墨一样停在这里。";
+        answerText.classList.add("is-placeholder");
+        return;
+      }
+      answerQuestion.textContent = `${state.answer.groupLabel} · ${state.answer.question}`;
+      answerText.textContent = state.answer.answer;
+      answerText.classList.remove("is-placeholder");
+    }
+
+    // 更新底部状态
+    function updateFootState() {
+      if (!state.ready) {
+        footState.textContent = "等待数据加载...";
+        emptyNote.classList.remove("show");
+        return;
+      }
+
+      const remaining = state.bubbles.filter((bubble) => !bubble.popped).length;
+      const total = state.bubbles.length;
+      footState.textContent = `还剩 ${remaining} / ${total} 个泡泡`;
+      emptyNote.classList.toggle("show", remaining === 0 && total > 0);
+    }
+
+    // 处理窗口大小变化
+    function handleResize() {
+      if (!cupShell || !canvas || !ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = cupShell.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        // 尺寸还没准备好，延迟重试
+        setTimeout(handleResize, 50);
+        return;
+      }
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.cupRect = rect;
+    }
+
+    // 获取当前 canvas 尺寸（直接获取，不依赖缓存）
+    function getCanvasRect() {
+      return canvas.getBoundingClientRect();
+    }
+
+    // 处理鼠标移动
+    function handlePointerMove(event) {
+      if (!state.ready) return;
+      const rect = getCanvasRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const hovered = findBubbleAtPoint(x, y);
+      state.hoverId = hovered ? hovered.id : null;
+      canvas.style.cursor = hovered ? "pointer" : "default";
+    }
+
+    // 处理点击
+    function handleCanvasClick(event) {
+      if (!state.ready) return;
+      const rect = getCanvasRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const target = findBubbleAtPoint(x, y);
+      if (target) popBubble(target);
+    }
+
+    // 查找气泡位置
+    function findBubbleAtPoint(x, y) {
+      const candidates = getBubbleLayouts().reverse();
+      return candidates.find((bubble) => {
+        const dx = x - bubble.screenX;
+        const dy = y - bubble.screenY;
+        return Math.hypot(dx, dy) <= bubble.renderRadius;
+      }) || null;
+    }
+
+    // 计算气泡布局 - 只有悬停的泡泡暂停漂移
+    function getBubbleLayouts() {
+      const rect = getCanvasRect();
+      const width = rect.width || canvas.clientWidth || 400;
+      const height = rect.height || canvas.clientHeight || 400;
+      const now = performance.now();
+      const elapsed = now - state.timeStart;
+
+      return state.bubbles.map((bubble) => {
+        // 只有当前悬停的泡泡暂停漂移，其他泡泡继续漂浮
+        const isHovered = state.hoverId === bubble.id;
+        const driftMultiplier = isHovered ? 0 : 1;
+        
+        // 缓慢漂浮动画
+        const pulse = Math.sin(elapsed * 0.0015 + bubble.driftSeed * 10) * 4 * driftMultiplier;
+        const driftX = Math.sin(elapsed * 0.0008 + bubble.driftSeed * 8) * 10 * driftMultiplier;
+        const driftY = Math.cos(elapsed * 0.0012 + bubble.driftSeed * 7) * 8 * driftMultiplier;
+        
+        // 转换百分比位置到像素
+        const centerX = width * (bubble.anchorX / 100);
+        const centerY = height * (bubble.anchorY / 100);
+        
+        const screenX = centerX + bubble.baseOffsetX + driftX;
+        const screenY = centerY + bubble.baseOffsetY + driftY - pulse;
+        
+        // 悬停时放大
+        const hoverBoost = isHovered ? 1.2 : 1;
+        const popProgress = bubble.popped ? clamp((now - bubble.popStart) / 300, 0, 1) : 0;
+        const visibility = bubble.popped ? 1 - popProgress : 1;
+
+        return {
+          ...bubble,
+          screenX,
+          screenY,
+          hoverBoost,
+          isHovered,
+          popProgress,
+          visibility,
+          renderRadius: bubble.radius * hoverBoost * Math.max(visibility, 0.01)
+        };
+      });
+    }
+
+    // 戳破气泡
+    function popBubble(bubble) {
+      if (bubble.popped) return;
+      bubble.popped = true;
+      bubble.popStart = performance.now();
+      state.answer = bubble;
+      updateAnswerPanel();
+      updateFootState();
+    }
+
+    // 随机戳破
+    function popRandomBubble() {
+      if (!state.ready) return;
+      const remaining = state.bubbles.filter((bubble) => !bubble.popped);
+      if (!remaining.length) {
+        updateFootState();
+        return;
+      }
+      const picked = remaining[Math.floor(Math.random() * remaining.length)];
+      popBubble(picked);
+    }
+
+    // 重置气泡
+    function resetBubbles() {
+      if (!state.ready) return;
+      state.bubbles.forEach((bubble) => {
+        bubble.popped = false;
+        bubble.popStart = 0;
+      });
+      state.answer = null;
+      updateAnswerPanel();
+      updateFootState();
+    }
+
+    // 动画循环
+    function drawLoop() {
+      drawScene();
+      requestAnimationFrame(drawLoop);
+    }
+
+    // 绘制场景
+    function drawScene() {
+      if (!canvas || !ctx) return;
+      const width = state.cupRect ? state.cupRect.width : (canvas.clientWidth || 400);
+      const height = state.cupRect ? state.cupRect.height : (canvas.clientHeight || 400);
+      ctx.clearRect(0, 0, width, height);
+      
+      // 绘制杯子背景
+      drawCup(width, height);
+      
+      // 绘制气泡
+      if (state.ready) {
+        getBubbleLayouts().forEach(drawBubble);
+      }
+    }
+
+    // 绘制杯子
+    function drawCup(width, height) {
+      const cupX = width * 0.1;
+      const cupY = height * 0.08;
+      const cupWidth = width * 0.8;
+      const cupHeight = height * 0.8;
+      const rimHeight = Math.max(20, height * 0.05);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cupX + 20, cupY);
+      ctx.quadraticCurveTo(cupX + cupWidth / 2, cupY - rimHeight, cupX + cupWidth - 20, cupY);
+      ctx.lineTo(cupX + cupWidth - 30, cupY + cupHeight - 20);
+      ctx.quadraticCurveTo(cupX + cupWidth / 2, cupY + cupHeight + 20, cupX + 30, cupY + cupHeight - 20);
+      ctx.closePath();
+
+      // 杯子填充
+      const fill = ctx.createLinearGradient(0, cupY, 0, cupY + cupHeight);
+      fill.addColorStop(0, "rgba(255,255,255,0.4)");
+      fill.addColorStop(0.2, "rgba(245, 250, 252, 0.45)");
+      fill.addColorStop(1, "rgba(215, 228, 232, 0.55)");
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      // 杯子边框
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(114, 110, 104, 0.3)";
+      ctx.stroke();
+
+      // 水面
+      ctx.beginPath();
+      ctx.ellipse(cupX + cupWidth / 2, cupY + 25, cupWidth / 2 - 20, rimHeight, 0, 0, Math.PI * 2);
+      const water = ctx.createLinearGradient(0, cupY, 0, cupY + cupHeight);
+      water.addColorStop(0, "rgba(245, 249, 250, 0.6)");
+      water.addColorStop(1, "rgba(207, 221, 226, 0.65)");
+      ctx.fillStyle = water;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 绘制气泡
+    function drawBubble(bubble) {
+      if (bubble.visibility <= 0) return;
+
+      const radius = bubble.renderRadius;
+      const x = bubble.screenX;
+      const y = bubble.screenY;
+      const opacity = bubble.visibility;
+      const isHovered = bubble.isHovered;
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+
+      // 悬停时添加光圈高亮效果
+      if (isHovered) {
+        // 外层光圈
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 8, 0, Math.PI * 2);
+        const glowGradient = ctx.createRadialGradient(x, y, radius, x, y, radius + 12);
+        glowGradient.addColorStop(0, hexToRgba(bubble.color, 0.4));
+        glowGradient.addColorStop(1, hexToRgba(bubble.color, 0));
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+        
+        // 增强阴影
+        ctx.shadowColor = hexToRgba(bubble.color, 0.5);
+        ctx.shadowBlur = 25;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      // 气泡主体
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      
+      // 渐变填充
+      const gradient = ctx.createRadialGradient(
+        x - radius * 0.3, y - radius * 0.4, radius * 0.1,
+        x, y, radius
+      );
+      gradient.addColorStop(0, "rgba(255,255,255,0.7)");
+      gradient.addColorStop(0.5, "rgba(255,255,255,0.25)");
+      gradient.addColorStop(1, hexToRgba(bubble.color, isHovered ? 0.4 : 0.3));
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // 边框 - 悬停时更明显
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      ctx.strokeStyle = isHovered ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.8)";
+      ctx.stroke();
+
+      // 高光
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.25, y - radius * 0.35, radius * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = isHovered ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)";
+      ctx.fill();
+
+      // 破裂动画
+      if (bubble.popProgress > 0 && bubble.popProgress < 1) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius + bubble.popProgress * 25, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = hexToRgba(bubble.color, 0.35 * (1 - bubble.popProgress));
+        ctx.stroke();
+      }
+
+      // 绘制问题文字
+      drawBubbleText(bubble, radius);
+      ctx.restore();
+    }
+
+    // 绘制气泡文字
+    function drawBubbleText(bubble, radius) {
+      const maxLen = Math.floor(radius / 4);
+      const question = bubble.question.length > maxLen ? `${bubble.question.slice(0, maxLen)}…` : bubble.question;
+      
+      ctx.fillStyle = `rgba(45, 41, 38, ${0.65 * bubble.visibility})`;
+      ctx.font = `${Math.max(11, Math.min(15, radius * 0.4))}px serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      
+      // 文字换行
+      const maxWidth = radius * 1.6;
+      const lineHeight = Math.max(12, radius * 0.4);
+      wrapCanvasText(question, bubble.screenX, bubble.screenY, maxWidth, lineHeight);
+    }
+
+    // 文字换行
+    function wrapCanvasText(text, centerX, centerY, maxWidth, lineHeight) {
+      const chars = Array.from(text);
+      const lines = [];
+      let current = "";
+
+      chars.forEach((char) => {
+        const testLine = current + char;
+        if (ctx.measureText(testLine).width > maxWidth && current) {
+          lines.push(current);
+          current = char;
+        } else {
+          current = testLine;
+        }
+      });
+
+      if (current) lines.push(current);
+
+      const visibleLines = lines.slice(0, 3);
+      const offset = ((visibleLines.length - 1) * lineHeight) / 2;
+      visibleLines.forEach((line, index) => {
+        ctx.fillText(line, centerX, centerY - offset + index * lineHeight);
+      });
+    }
+
+    // 辅助函数
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function hashString(input) {
+      let hash = 0;
+      for (let i = 0; i < input.length; i += 1) {
+        hash = (hash << 5) - hash + input.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash % 997) / 997;
+    }
+
+    function hexToRgba(hex, alpha) {
+      const normalized = hex.replace("#", "");
+      const value = normalized.length === 3
+        ? normalized.split("").map((char) => char + char).join("")
+        : normalized;
+      const int = parseInt(value, 16);
+      const r = (int >> 16) & 255;
+      const g = (int >> 8) & 255;
+      const b = int & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+  </script>
+</body>
+</html>
